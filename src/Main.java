@@ -11,7 +11,7 @@ public class Main {
 
         AbonnementDAO abonnementDAO = new AbonnementDAO();
         PaiementDAO paiementDAO = new PaiementDAO();
-        AbonnementService abonnementService = new AbonnementService(abonnementDAO);
+        AbonnementService abonnementService = new AbonnementService(abonnementDAO, paiementDAO);
         PaiementService paiementService = new PaiementService(paiementDAO, abonnementDAO);
         Menu menu = new Menu(abonnementService, paiementService);
 
