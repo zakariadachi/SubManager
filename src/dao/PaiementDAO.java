@@ -1,6 +1,7 @@
 package dao;
 
 import entity.Paiement;
+import java.util.Comparator;
 import entity.StatutPaiement;
 
 import java.util.ArrayList;
@@ -39,11 +40,19 @@ public class PaiementDAO {
     }
 
     public List<Paiement> findUnpaidByAbonnement(String idAbonnement) { 
-        return store.values().stream().filter(s -> s.getIdAbonnement().equals(idAbonnement) && s.getStatut() == StatutPaiement.NON_PAYE).collect(Collectors.toList());
+        return store.values().stream()
+                .filter(s -> s.getIdAbonnement().equals(idAbonnement)
+                        && (s.getStatut() == StatutPaiement.NON_PAYE
+                         || s.getStatut() == StatutPaiement.EN_RETARD))
+                .collect(Collectors.toList());
     }
 
-    /** Retourne les n derniers paiements triés par date */
+    /** Retourne les n derniers paiements triés par date de paiement décroissante (null en dernier) */
     public List<Paiement> findLastPayments(int n) { 
-        return store.values().stream().sorted((p1,p2)->p2.getDatePaiement().compareTo(p1.getDatePaiement())).limit(n).collect(Collectors.toList());
+        return store.values().stream()
+                .sorted(Comparator.comparing(Paiement::getDatePaiement,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(n)
+                .collect(Collectors.toList());
     }
 }

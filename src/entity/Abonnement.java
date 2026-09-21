@@ -36,6 +36,6 @@ public abstract class Abonnement {
 
     @Override
     public String toString() {
-        return "[" + id + "] " + nomService + " | " + montantMensuel + "€/mois | " + statut;
+        return "[" + id + "] " + nomService + " | " + montantMensuel + " DH/mois | " + statut;
     }
 }

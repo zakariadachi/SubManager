@@ -37,6 +37,6 @@ public class Paiement {
     @Override
     public String toString() {
         return "[" + idPaiement + "] Abonnement: " + idAbonnement
-                + " | Échéance: " + dateEcheance + " | " + typePaiement + " | " + statut;
+                + " | Echeance: " + dateEcheance + " | " + typePaiement + " | " + statut;
     }
 }

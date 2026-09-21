@@ -2,6 +2,7 @@ package util;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 public class DateUtil {
@@ -13,7 +14,11 @@ public class DateUtil {
     }
 
     public static Optional<LocalDate> parse(String dateStr) {
-        return Optional.of(LocalDate.parse(dateStr,FORMATTER));
+        try {
+            return Optional.of(LocalDate.parse(dateStr, FORMATTER));
+        } catch (DateTimeParseException e) {
+            return Optional.empty();
+        }
     }
 
     public static boolean isBeforeToday(LocalDate date) { 

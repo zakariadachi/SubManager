@@ -67,6 +67,10 @@ public class AbonnementService {
 
             Abonnement abonnement = optionalAbonnement.get();
 
+            // Supprimer les échéances existantes pour éviter les doublons
+            List<Paiement> existing = paiementDAO.findByAbonnement(idAbonnement);
+            existing.forEach(p -> paiementDAO.delete(p.getIdPaiement()));
+
             LocalDate date = abonnement.getDateDebut();
 
             while (!date.isAfter(abonnement.getDateFin())) {
