@@ -172,12 +172,31 @@ public class Menu {
     private void genererEcheances() {
         System.out.print("ID de l'abonnement : ");
         String id = scanner.nextLine().trim();
-        if (abonnementService.trouverParId(id).isPresent()) {
-            abonnementService.genererEcheances(id);
-            afficher("echeances generees.");
-        } else {
+
+        if (!abonnementService.trouverParId(id).isPresent()) {
             afficher("Abonnement introuvable.");
+            return;
         }
+
+        double montant = abonnementService.trouverParId(id)
+                .map(a -> a.getMontantMensuel())
+                .orElse(0.0);
+
+        List<Paiement> generes = abonnementService.genererEcheances(id);
+
+        if (generes.isEmpty()) {
+            afficher("Aucune echeance generee (verifiez les dates de l'abonnement).");
+            return;
+        }
+
+        afficher("\nEcheances generees avec succes :");
+        for (Paiement p : generes) {
+            System.out.printf("  - %s | %.2f DH | %s%n",
+                    DateUtil.format(p.getDateEcheance()),
+                    montant,
+                    p.getStatut());
+        }
+        System.out.printf("%nNombre d'echeances generees : %d%n", generes.size());
     }
 
     // ─── MENU PAIEMENTS ──────────────────────────────────────────────────────
@@ -234,10 +253,8 @@ public class Menu {
         afficher("Type : 1.CARTE  2.VIREMENT  3.ESPECES  4.PRELEVEMENT");
         TypePaiement type = lireTypePaiement();
 
-        afficher("Statut : 1.PAYE  2.NON_PAYE  3.EN_RETARD");
-        StatutPaiement statut = lireStatutPaiement();
-
-        Paiement paiement = new Paiement(idAbonnement, echeance, datePaiement, type, statut);
+        // Le statut est calculé automatiquement par le service selon la règle métier
+        Paiement paiement = new Paiement(idAbonnement, echeance, datePaiement, type, StatutPaiement.NON_PAYE);
         paiementService.enregistrerPaiement(paiement);
         afficher("Paiement enregistre. ID : " + paiement.getIdPaiement());
     }
@@ -250,14 +267,11 @@ public class Menu {
         if (!opt.isPresent()) { afficher("Paiement introuvable."); return; }
 
         Paiement p = opt.get();
-        System.out.print("Nouvelle date de paiement (dd/MM/yyyy) : ");
+        System.out.print("Nouvelle date de paiement (dd/MM/yyyy, ou laisser vide si non paye) : ");
         LocalDate date = lireDate();
         if (date != null) p.setDatePaiement(date);
 
-        afficher("Nouveau statut : 1.PAYE  2.NON_PAYE  3.EN_RETARD");
-        StatutPaiement statut = lireStatutPaiement();
-        if (statut != null) p.setStatut(statut);
-
+        // Le statut est recalculé automatiquement par le service
         paiementService.modifierPaiement(p);
         afficher("Paiement modifie.");
     }
@@ -334,8 +348,26 @@ public class Menu {
     private void afficherRapportImpayes() {
         List<Paiement> impayes = paiementService.rapportImpayes();
         if (impayes.isEmpty()) { afficher("Aucun impaye."); return; }
-        afficher("\n--- Rapport des impayes ---");
-        impayes.forEach(System.out::println);
+
+        afficher("\n--- Paiements NON_PAYE ---");
+        boolean aucunNonPaye = true;
+        for (Paiement p : impayes) {
+            if (p.getStatut() == StatutPaiement.NON_PAYE) {
+                afficher(p.toString());
+                aucunNonPaye = false;
+            }
+        }
+        if (aucunNonPaye) afficher("Aucun.");
+
+        afficher("\n--- Paiements EN_RETARD ---");
+        boolean aucunRetard = true;
+        for (Paiement p : impayes) {
+            if (p.getStatut() == StatutPaiement.EN_RETARD) {
+                afficher(p.toString());
+                aucunRetard = false;
+            }
+        }
+        if (aucunRetard) afficher("Aucun.");
     }
 
     // ─── AFFICHAGE DES MENUS ─────────────────────────────────────────────────
@@ -396,15 +428,7 @@ public class Menu {
             return -1;
         }
     }
-
-    private int lireInt() {
-        try {
-            return Integer.parseInt(scanner.nextLine().trim());
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
-
+    
     private LocalDate lireDate() {
         try {
             return DateUtil.parse(scanner.nextLine().trim()).orElse(null);

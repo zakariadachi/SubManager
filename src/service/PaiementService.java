@@ -24,11 +24,18 @@ public class PaiementService {
         this.abonnementDAO = abonnementDAO;
     }
 
+    /** Applique la règle principale : le statut est toujours calculé à partir des données. */
+    private void appliquerStatutAuto(Paiement paiement) {
+        paiement.setStatut(Paiement.calculerStatut(paiement.getDatePaiement(), paiement.getDateEcheance()));
+    }
+
     public void enregistrerPaiement(Paiement paiement) {
+        appliquerStatutAuto(paiement);
         paiementDAO.create(paiement);
     }
 
     public void modifierPaiement(Paiement paiement) {
+        appliquerStatutAuto(paiement);
         paiementDAO.update(paiement);
     }
 
@@ -37,6 +44,14 @@ public class PaiementService {
     }
 
     public List<Paiement> detecterImpayes(String idAbonnement) {
+        // Rafraîchir les statuts selon la règle avant de retourner les impayés
+        paiementDAO.findByAbonnement(idAbonnement).forEach(p -> {
+            StatutPaiement correct = Paiement.calculerStatut(p.getDatePaiement(), p.getDateEcheance());
+            if (correct != p.getStatut()) {
+                p.setStatut(correct);
+                paiementDAO.update(p);
+            }
+        });
         return paiementDAO.findUnpaidByAbonnement(idAbonnement);
     }
 

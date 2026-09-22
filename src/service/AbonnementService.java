@@ -58,36 +58,41 @@ public class AbonnementService {
         });
     }
 
-    public void genererEcheances(String idAbonnement) {
+    public List<Paiement> genererEcheances(String idAbonnement) {
 
         Optional<Abonnement> optionalAbonnement =
                 abonnementDAO.findById(idAbonnement);
 
-        if (optionalAbonnement.isPresent()) {
-
-            Abonnement abonnement = optionalAbonnement.get();
-
-            // Supprimer les échéances existantes pour éviter les doublons
-            List<Paiement> existing = paiementDAO.findByAbonnement(idAbonnement);
-            existing.forEach(p -> paiementDAO.delete(p.getIdPaiement()));
-
-            LocalDate date = abonnement.getDateDebut();
-
-            while (!date.isAfter(abonnement.getDateFin())) {
-
-                Paiement paiement = new Paiement(
-                        abonnement.getId(),
-                        date,
-                        null,
-                        TypePaiement.CARTE,
-                        StatutPaiement.NON_PAYE
-                );
-
-                paiementDAO.create(paiement);
-
-                date = date.plusMonths(1);
-            }
+        if (!optionalAbonnement.isPresent()) {
+            return java.util.Collections.emptyList();
         }
+
+        Abonnement abonnement = optionalAbonnement.get();
+
+        // Supprimer les échéances existantes pour éviter les doublons
+        List<Paiement> existing = paiementDAO.findByAbonnement(idAbonnement);
+        existing.forEach(p -> paiementDAO.delete(p.getIdPaiement()));
+
+        List<Paiement> generes = new java.util.ArrayList<>();
+        LocalDate date = abonnement.getDateDebut();
+
+        while (date.isBefore(abonnement.getDateFin())) {
+
+            Paiement paiement = new Paiement(
+                    abonnement.getId(),
+                    date,
+                    null,
+                    TypePaiement.CARTE,
+                    Paiement.calculerStatut(null, date)
+            );
+
+            paiementDAO.create(paiement);
+            generes.add(paiement);
+
+            date = date.plusMonths(1);
+        }
+
+        return generes;
     }
 
     public Optional<Abonnement> trouverParId(String id) {

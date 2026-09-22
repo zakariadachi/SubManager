@@ -34,6 +34,17 @@ public class Paiement {
     public void setTypePaiement(TypePaiement typePaiement) { this.typePaiement = typePaiement; }
     public void setStatut(StatutPaiement statut) { this.statut = statut; }
 
+   
+    public static StatutPaiement calculerStatut(LocalDate datePaiement, LocalDate dateEcheance) {
+        if (datePaiement != null) {
+            return StatutPaiement.PAYE;
+        } else if (dateEcheance != null && dateEcheance.isBefore(LocalDate.now())) {
+            return StatutPaiement.EN_RETARD;
+        } else {
+            return StatutPaiement.NON_PAYE;
+        }
+    }
+
     @Override
     public String toString() {
         return "[" + idPaiement + "] Abonnement: " + idAbonnement
